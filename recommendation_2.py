@@ -1,4 +1,4 @@
-!pip install pymongo
+pip install pymongo
 import streamlit as st
 from datetime import date, datetime
 from math import ceil
