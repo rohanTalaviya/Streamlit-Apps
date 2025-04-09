@@ -7,6 +7,7 @@ import logging
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 from bson.objectid import ObjectId
+import random
 
 # MongoDB connection details
 MONGO_URI = "mongodb://Kishan:KishankFitshield@ec2-13-233-104-209.ap-south-1.compute.amazonaws.com:27017/?authMechanism=SCRAM-SHA-256&authSource=Fitshield"
@@ -237,7 +238,7 @@ ranked_dishes.sort(key=lambda x: x["score"], reverse=True)
 # Step 3: Split into top 30%, next 40%, remaining
 total = len(ranked_dishes)
 top_30 = int(total * 0.2)
-next_40 = int(total * 0.2)
+next_40 = int(total * 0.1)
 
 raw_best_match = ranked_dishes[:top_30]
 good_match = ranked_dishes[top_30:top_30 + next_40]
@@ -245,6 +246,7 @@ others = ranked_dishes[top_30 + next_40:]
 
 # Step 4: Filter best match by preferred dish types
 best_match = []
+random.shuffle(best_match)
 moved_to_good = []
 
 for dish in raw_best_match:
