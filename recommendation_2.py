@@ -246,7 +246,6 @@ others = ranked_dishes[top_30 + next_40:]
 
 # Step 4: Filter best match by preferred dish types
 best_match = []
-random.shuffle(best_match)
 moved_to_good = []
 
 for dish in raw_best_match:
@@ -255,6 +254,7 @@ for dish in raw_best_match:
     else:
         moved_to_good.append(dish)
 
+random.shuffle(best_match)
 # Add those moved dishes to good match
 good_match = moved_to_good + good_match
 
