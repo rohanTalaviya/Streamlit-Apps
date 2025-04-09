@@ -238,7 +238,7 @@ ranked_dishes.sort(key=lambda x: x["score"], reverse=True)
 # Step 3: Split into top 30%, next 40%, remaining
 total = len(ranked_dishes)
 top_30 = int(total * 0.2)
-next_40 = int(total * 0.1)
+next_40 = int(total * 0.05)
 
 raw_best_match = ranked_dishes[:top_30]
 good_match = ranked_dishes[top_30:top_30 + next_40]
