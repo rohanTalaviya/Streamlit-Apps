@@ -14,6 +14,7 @@ MONGO_URI = "mongodb://Kishan:KishankFitshield@ec2-13-233-104-209.ap-south-1.com
 client = MongoClient(MONGO_URI)
 db = client["Fitshield"]
 
+
 RestaurantMenuData = db["RestaurantMenuData"]
 UserData = db["UserData"]
 
