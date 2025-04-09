@@ -217,7 +217,7 @@ if st.button("Rank Dishes"):
 
 import json
 
-preferred_types = {"Starter", "Main Course", "Side Dish", "Salad"}
+preferred_types = {"Lunch", "Dinner", "Brunch"}
 ranked_dishes = []
 
 # Step 1: Score and collect dish info
@@ -227,7 +227,7 @@ for dish in menu_data["menu"]:
     ranked_dishes.append({
         "dish_name": dish["dish_name"],
         "score": score,
-        "dish_type": dish["dish_type"],
+        "timing_category": dish["timing_category"],
         "nutrients": dish_nutrients,
         "distributed_percentage": dish["distributed_percentage"]
     })
@@ -249,7 +249,7 @@ best_match = []
 moved_to_good = []
 
 for dish in raw_best_match:
-    if set(dish["dish_type"]) & preferred_types:
+    if set(dish["timing_category"]) & preferred_types:
         best_match.append(dish)
     else:
         moved_to_good.append(dish)
