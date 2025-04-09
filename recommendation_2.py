@@ -258,6 +258,8 @@ random.shuffle(best_match)
 # Add those moved dishes to good match
 good_match = moved_to_good + good_match
 
+random.shuffle(good_match)
+
 # Step 5: Structure final result
 final_result = [
     {
