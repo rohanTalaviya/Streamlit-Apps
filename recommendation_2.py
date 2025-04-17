@@ -17,11 +17,9 @@ db = client["Fitshield"]
 
 
 RestaurantMenuData = db["RestaurantMenuData"]
-UserData = db["UserData"]
 
-menu_data = RestaurantMenuData.find_one({"_id": "restro_ELKespresso_395007_fb43ccca-fc7c-46a2-8e7e-912cbf4c6114"})
 
-user_data = UserData.find_one({"_id": "9898589375"})
+menu_data = RestaurantMenuData.find_one({"_id": "restro_ANAVRIN_395010_40269a87-3a94-4ea3-975d-887e680aac12"})
 
 col1, col2, col3, col4 = st.columns(4)  # Creates four smaller columns
 
@@ -76,12 +74,14 @@ def calculate_score(dish, hunger_level, user_live_goal, live_goal_energy, percen
     fats_dish_percentage = float(dish["distributed_percentage"].get("fats", 0).replace("%", ""))
     fiber_dish_percentage = float(dish["distributed_percentage"].get("fibers", 0).replace("%", ""))
 
+
     high_satiety_factor = 0.5
     low_satiety_factor = -0.3
     medium_satiety_factor = 0
 
     epsilon = 1e-6  # Small value to avoid division by zero
-    
+    live_goal_energy = live_goal_energy if live_goal_energy != 0 else epsilon
+
     macro_nutrients = dish["dish_variants"]["normal"]["full"]["calculate_nutrients"]["macro_nutrients"]
     dish_energy = next((item["value"] for item in macro_nutrients if item["name"] == "energy"), 0)
     dish_protein = next((item["value"] for item in macro_nutrients if item["name"] == "proteins"), 0)
@@ -112,14 +112,20 @@ def calculate_score(dish, hunger_level, user_live_goal, live_goal_energy, percen
     live_carbs_factor = defult_carbs_factor + (defult_carbs_factor * percentage_difference_carbs /100)
     live_fats_factor = defult_fats_factor + (defult_fats_factor * percentage_difference_fats /100)
     live_fiber_factor = defult_fiber_factor + (defult_fiber_factor * percentage_difference_fibers /100)
+
     
     protein_live_goal_percentage = (live_goal_protein * 4) / live_goal_energy * 100 or 1
-    cabs_live_goal_percentage = (live_goal_carbs * 4) / live_goal_energy * 100 or 1
+    carbs_live_goal_percentage = (live_goal_carbs * 4) / live_goal_energy * 100 or 1
     fats_live_goal_percentage = (live_goal_fats * 9) / live_goal_energy * 100 or 1
     fiber_live_goal_percentage = (live_goal_fibers * 2) / live_goal_energy * 100 or 1
 
+    print("live_protien_factor", live_protien_factor)
+    print("live_carbs_factor", live_carbs_factor)
+    print("live_fats_factor", live_fats_factor)
+    print("live_fiber_factor", live_fiber_factor)
+
     score_protein = live_protien_factor * min(1, protien_dish_percentage / protein_live_goal_percentage)
-    score_carbs = live_carbs_factor * min(1, cabs_dish_percentage / cabs_live_goal_percentage)
+    score_carbs = live_carbs_factor * min(1, cabs_dish_percentage / carbs_live_goal_percentage)
     score_fats = live_fats_factor * min(1, fats_dish_percentage / fats_live_goal_percentage)
     score_fiber = live_fiber_factor * min(1, fiber_dish_percentage / fiber_live_goal_percentage)
 
@@ -133,6 +139,10 @@ def calculate_score(dish, hunger_level, user_live_goal, live_goal_energy, percen
     carbs_euclidean_distance = abs(float(dish_carbs) - live_goal_carbs)
     fats_euclidean_distance = abs(float(dish_fats) - live_goal_fats)
     fiber_euclidean_distance = abs(float(dish_fibers) - live_goal_fibers)
+    print("protein_euclidean_distance",protein_euclidean_distance)
+    print("carbs_euclidean_distance",carbs_euclidean_distance)
+    print("fats_euclidean_distance",fats_euclidean_distance)
+    print("fiber_euclidean_distance",fiber_euclidean_distance)
 
     
     protein_euclidean = max(0, min(100, (1 - (protein_euclidean_distance / (live_goal_protein + epsilon))) * 100))
@@ -140,8 +150,8 @@ def calculate_score(dish, hunger_level, user_live_goal, live_goal_energy, percen
     fats_euclidean = max(0, min(100, (1 - (fats_euclidean_distance / (live_goal_fats + epsilon))) * 100))
     fiber_euclidean = max(0, min(100, (1 - (fiber_euclidean_distance / (live_goal_fibers + epsilon))) * 100))
 
-    euclidean_distance = protein_euclidean * defult_protien_factor + carbs_euclidean * defult_carbs_factor + fats_euclidean * defult_fats_factor + fiber_euclidean * defult_fiber_factor
-    euclidean_distance_score = euclidean_distance / (defult_protien_factor + defult_carbs_factor + defult_fats_factor + defult_fiber_factor)
+    euclidean_distance = protein_euclidean * live_protien_factor + carbs_euclidean * live_carbs_factor + fats_euclidean * live_fats_factor + fiber_euclidean * live_fiber_factor
+    euclidean_distance_score = euclidean_distance / (live_protien_factor + live_carbs_factor + live_fats_factor + live_fiber_factor)
 
 
     #__________________________________________ Satiety score ________________________________________________________________________________________________________
@@ -153,10 +163,10 @@ def calculate_score(dish, hunger_level, user_live_goal, live_goal_energy, percen
     if dish_energy == 0:
         dish_energy = 1
     
-    satiety_score = (protien_variation_percentage * (float(dish_protein) / dish_energy) 
-                     + carbs_variation_percentage * (float(dish_carbs) / dish_energy) 
-                     + fats_variation_percentage * (float(dish_fats) / dish_energy) 
-                     + fiber_variation_percentage * (float(dish_fibers) / dish_energy))
+    satiety_score = (live_protien_factor * (float(dish_protein) / dish_energy) 
+                     + live_carbs_factor * (float(dish_carbs) / dish_energy) 
+                     + live_fats_factor * (float(dish_fats) / dish_energy) 
+                     + live_fiber_factor * (float(dish_fibers) / dish_energy))
 
     high_satiety = 1 + high_satiety_factor  * satiety_score
     low_satiety = 1 + low_satiety_factor * satiety_score
@@ -165,9 +175,9 @@ def calculate_score(dish, hunger_level, user_live_goal, live_goal_energy, percen
     final_satiety_score = 0
 
     if hunger_level == "High":
-        final_satiety_score = high_satiety
-    elif hunger_level == "Low":
         final_satiety_score = low_satiety
+    elif hunger_level == "Low":
+        final_satiety_score = high_satiety
     elif hunger_level == "Medium":
         final_satiety_score = medium_satiety
 
@@ -177,22 +187,25 @@ def calculate_score(dish, hunger_level, user_live_goal, live_goal_energy, percen
     final_dish_score = (((live_base_score * density_factor) + (scaled_satiety_score * satiety_factor) + (euclidean_distance_score * euclidean_factor))/ (density_factor + satiety_factor + euclidean_factor))
 
 
-    return final_dish_score
+    return final_dish_score, euclidean_distance_score
 
 # Add a button to rank dishes
 if st.button("Rank Dishes"):
     
     st.header("Recommended Dishes")
+    UserData = db["UserData"]
+    user_data = UserData.find_one({"_id": "user_Rahul Virani_4a11ee11-29ce-47ae-a569-f01c62e03e11"})
+
 
     print(user_data)
     hunger_level = user_data["hunger_level"]
     user_default_goal = user_data["goals"]["default_goal"]["nutrients"]
     user_live_goal = user_data["goals"]["live_goal"]["nutrients"]
 
-    default_goal_protein = user_default_goal["protein"]["value"]
-    default_goal_carbs = user_default_goal["carbs"]["value"]
-    default_goal_fats = user_default_goal["fats"]["value"]
-    default_goal_fibers = user_default_goal["fiber"]["value"]
+    default_goal_protein = 20#user_default_goal["protein"]["value"]
+    default_goal_carbs = 20#user_default_goal["carbs"]["value"]
+    default_goal_fats = 20#user_default_goal["fats"]["value"]
+    default_goal_fibers = 10#user_default_goal["fiber"]["value"]
 
     # live_goal_protein = user_live_goal["protein"]["value"]
     # live_goal_carbs = user_live_goal["carbs"]["value"]
@@ -206,11 +219,20 @@ if st.button("Rank Dishes"):
     live_goal_fats = fats_live_goal_value
     live_goal_fibers = fiber_live_goal_value
     live_goal_energy = (protien_live_goal_value * 4) + (cabs_live_goal_value * 4) + (fats_live_goal_value * 9) + (fiber_live_goal_value * 2)
+    # percentage_difference_protein = round(((live_goal_protein - default_goal_protein) / default_goal_protein) * 100, 2)
+    # percentage_difference_carbs = round(((live_goal_carbs - default_goal_carbs) / default_goal_carbs) * 100, 2)
+    # percentage_difference_fats = round(((live_goal_fats - default_goal_fats) / default_goal_fats) * 100, 2)
+    # percentage_difference_fibers = round(((live_goal_fibers - default_goal_fibers) / default_goal_fibers) * 100, 2)
 
-    percentage_difference_protein = round(((live_goal_protein - default_goal_protein) / default_goal_protein) * 100, 2)
-    percentage_difference_carbs = round(((live_goal_carbs - default_goal_carbs) / default_goal_carbs) * 100, 2)
-    percentage_difference_fats = round(((live_goal_fats - default_goal_fats) / default_goal_fats) * 100, 2)
-    percentage_difference_fibers = round(((live_goal_fibers - default_goal_fibers) / default_goal_fibers) * 100, 2)
+
+    percentage_difference_protein = round(((live_goal_protein - default_goal_protein) / default_goal_protein) * 100, 2) *2
+    print("percentage_difference_protein", percentage_difference_protein)
+    percentage_difference_carbs = round(((live_goal_carbs - default_goal_carbs) / default_goal_carbs) * 100, 2) *2
+    print("percentage_difference_carbs", percentage_difference_carbs)
+    percentage_difference_fats = round(((live_goal_fats - default_goal_fats) / default_goal_fats) * 100, 2) *2
+    print("percentage_difference_fats", percentage_difference_fats)
+    percentage_difference_fibers = round(((live_goal_fibers - default_goal_fibers) / default_goal_fibers) * 100, 2) *2
+    print("percentage_difference_fibers", percentage_difference_fibers)
 
     percentage_difference = {
         "proteins": percentage_difference_protein,
@@ -226,11 +248,12 @@ if st.button("Rank Dishes"):
 
     # Step 1: Score and collect dish info
     for dish in menu_data["menu"]:
-        score = calculate_score(dish, hunger_level, user_live_goal, live_goal_energy, percentage_difference)
+        score,euclidean_distance_score = calculate_score(dish, hunger_level, user_live_goal, live_goal_energy, percentage_difference)
         dish_nutrients = extract_nutrients(dish)
         ranked_dishes.append({
             "dish_name": dish["dish_name"],
             "score": score,
+            "euclidean_distance_score": euclidean_distance_score,
             "timing_category": dish["timing_category"],
             "nutrients": dish_nutrients,
             "distributed_percentage": dish["distributed_percentage"]
@@ -258,11 +281,11 @@ if st.button("Rank Dishes"):
         else:
             moved_to_good.append(dish)
 
-    random.shuffle(best_match)
+    #random.shuffle(best_match)
     # Add those moved dishes to good match
     good_match = moved_to_good + good_match
 
-    random.shuffle(good_match)
+    #random.shuffle(good_match)
 
     # Step 5: Structure final result
     final_result = [
